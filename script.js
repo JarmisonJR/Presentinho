@@ -82,6 +82,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     verificarAniversario();
+    
+    // ATIVAÇÃO DOS CUPONS DA LOJA NO CARREGAMENTO
+    renderizarLoja(); 
+    
     setInterval(atualizarContadorCompleto, 1000);
     atualizarContadorCompleto();
 });
@@ -264,9 +268,11 @@ function completarMissao(id) {
     }
 }
 
-// Renderizar Loja
+// RENDERIZAR LOJA (CUPONS)
 function renderizarLoja() {
     const container = document.getElementById('lista-loja');
+    if (!container) return; // Proteção caso a aba não esteja renderizada
+    
     container.innerHTML = '';
     const itensLojaIniciais = [
         { id: 1, emoji: "🍿", titulo: "Vale Cinema", custo: 30 },
