@@ -2,161 +2,160 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Our Place</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Place 💖</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
-    <section id="home-screen" class="app-screen active">
-        <div id="anniversary-banner" class="anniversary-badge" style="display: none;">
-            🎉 Feliz Aniversário de Namoro! Hoje o dia é nosso! ❤️
+    <div id="anniversary-banner">🎉 Feliz aniversário de namoro! Hoje o dia é nosso! ❤️</div>
+
+    <div class="app-header">
+        <h1>Our Place</h1>
+        <p>O nosso cantinho sincronizado na nuvem</p>
+    </div>
+
+    <div class="counter-container">
+        <span>Tempo de História Juntos</span>
+        <div id="counter">0d 0h 0m 0s</div>
+    </div>
+
+    <div id="tela-home" class="app-screen active">
+        <h3 class="section-title">🎲 O que vamos fazer hoje?</h3>
+        <div class="roulette-container">
+            <div class="roulette-box">
+                <div id="roulette-display">Toque no botão para girar a roleta do destino! 👇</div>
+            </div>
+            <button class="action-btn btn-full" onclick="rodarRoleta()">Girar Roleta do Date</button>
         </div>
 
-        <div class="profile-area">
-            <div class="avatar">✨</div>
-            <div class="counter-container">
-                <p style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Contando cada segundo</p>
-                <div id="counter" class="counter-number">Calculando momentos...</div>
+        <h3 class="section-title">🎁 Surpresas Rápidas</h3>
+        <button class="action-btn btn-full" style="background: linear-gradient(135deg, var(--accent-pink), #ec4899);" onclick="abrirSurpresa()">
+            💖 Abrir um Bilhete de Amor
+        </button>
+    </div>
+
+    <div id="tela-mural" class="app-screen">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0 10px;">
+            <h3 class="section-title" style="margin: 0;">📸 Nosso Mural Vivo</h3>
+            <button class="action-btn" style="padding: 6px 12px; font-size: 0.75rem;" onclick="abrirModalGerenciarMural()">+ Pendurar</button>
+        </div>
+        
+        <div id="mural-container" class="mural-grid"></div>
+    </div>
+
+    <div id="tela-missoes" class="app-screen">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 class="section-title" style="margin: 0;">🎯 Missões do Dia</h3>
+            <div style="background: rgba(255,255,255,0.06); padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; color: #fbbf24; border: 1px solid rgba(251,191,36,0.2);">
+                🪙 <span id="moedas-count">0</span> moedas
             </div>
         </div>
         
-        <div class="daily-box" onclick="abrirSurpresa()" style="margin-bottom: 24px;">
-            <div style="font-size: 32px; margin-bottom: 8px;">🎁</div>
-            <h3 style="font-size: 1.2rem; margin-bottom: 4px;">Cápsula do Dia</h3>
-            <p style="color: var(--text-muted); font-size: 0.9rem;">Toque para revelar seu carinho diário.</p>
-        </div>
+        <div id="lista-missoes"></div>
+        <button class="action-btn btn-full" style="background: #334155; margin-top: 15px; font-size: 0.8rem;" onclick="resetarMissoesParaTeste()">🔄 Resetar Missões (Teste)</button>
+    </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h3 style="font-size: 1.2rem; font-weight: 700;">📸 Nosso Mural Vivo</h3>
-            <button class="action-btn" style="background: var(--accent-purple); color: white; font-size: 0.8rem; padding: 6px 12px; min-height: auto;" onclick="abrirModalGerenciarMural()">
-                ➕ Adicionar Mídia
+    <div id="tela-loja" class="app-screen">
+        <h3 class="section-title">🛍️ Lojinha de Cupons</h3>
+        <div id="lista-loja"></div>
+    </div>
+
+    <div id="tela-encontros" class="app-screen">
+        <h3 class="section-title">🌹 Agendar Próximo Encontro</h3>
+        <div class="roulette-container" style="text-align: left; padding: 18px;">
+            <div class="form-group">
+                <label>Quando vai ser?</label>
+                <input type="date" id="date-input" class="app-input">
+            </div>
+            <div class="form-group">
+                <label>A que horas?</label>
+                <input type="time" id="time-input" class="app-input">
+            </div>
+            <div class="form-group">
+                <label>Onde nos vamos encontrar?</label>
+                <input type="text" id="place-input" class="app-input" placeholder="Ex: Shopping, Cinema, Restaurante...">
+            </div>
+            <div class="form-group">
+                <label>Alguma nota ou aviso especial?</label>
+                <input type="text" id="notes-input" class="app-input" placeholder="Ex: Levar casaco, ir com roupa bonita...">
+            </div>
+            <button class="action-btn btn-full" style="background: var(--accent-pink);" onclick="agendarEncontro()">
+                💌 Enviar Convite por WhatsApp
             </button>
         </div>
 
-        <div class="polaroid-gallery" id="mural-container"></div>
-    </section>
+        <h3 class="section-title">📌 Status do Date</h3>
+        <div id="convite-encontro-container"></div>
+    </div>
 
-    <section id="missions-screen" class="app-screen">
-        <h2 style="font-size: 1.6rem; margin-bottom: 16px;">Sua Jornada</h2>
-        <div class="moedas-dashboard">
-            <span>🪙 Saldo Atual: <span id="moedas-count" style="color: var(--accent-purple); font-weight: 800;">0</span> moedas</span>
-        </div>
-        
-        <div style="text-align: right; margin-bottom: 15px;">
-            <button class="action-btn" style="background: var(--accent-pink); color: white; font-size: 0.8rem; padding: 6px 12px;" onclick="resetarMissoesParaTeste()">
-                🔄 Resetar Missões (Teste)
-            </button>
-        </div>
-        
-        <div class="missions-list">
-            <div id="lista-missoes"></div>
-        </div>
-    </section>
-
-    <section id="shop-screen" class="app-screen">
-        <h2 style="font-size: 1.6rem; margin-bottom: 16px;">Resgatar Recompensas</h2>
-        <div class="shop-grid" id="lista-loja"></div>
-    </section>
-
-    <section id="dates-screen" class="app-screen">
-        <h2 style="font-size: 1.6rem; margin-bottom: 16px;">Marcar Encontro</h2>
-        
-        <div class="date-form">
-            <div class="input-group">
-                <label>📅 Quando?</label>
-                <input type="date" id="date-input">
-            </div>
-            <div class="input-group">
-                <label>⏰ Que horas?</label>
-                <input type="time" id="time-input">
-            </div>
-            <div class="input-group">
-                <label>📍 Onde vamos?</label>
-                <input type="text" id="place-input" placeholder="Ex: Nosso restaurante, Cinema...">
-            </div>
-            <div class="input-group">
-                <label>✨ Algo a mais / Notas</label>
-                <input type="text" id="notes-input" placeholder="Ex: Levar casaco, ir com roupa leve...">
-            </div>
-            <button class="action-btn" style="width: 100%; background: linear-gradient(90deg, var(--accent-purple), var(--accent-pink)); color: white; padding: 14px;" onclick="agendarEncontro()">
-                💌 Marcar e Enviar Convite
-            </button>
-        </div>
-
-        <h3 style="font-size: 1.2rem; margin-top: 24px; margin-bottom: 12px;">📌 Próximo Date Agendado</h3>
-        <div id="convite-encontro-container" style="margin-bottom: 24px;">
-            </div>
-
-        <h3 style="font-size: 1.2rem; margin-bottom: 12px; font-weight: 700;">🎰 Sem ideias para o Date?</h3>
-        <div class="roulette-box">
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 10px;">Gira a roleta para decidir o que comer ou fazer hoje!</p>
-            <div id="roulette-display" class="roulette-screen">❓ Clica para Girar ❓</div>
-            <button class="action-btn" style="background: var(--accent-purple); color: white; width: 100%; margin-top: 12px; padding: 12px;" onclick="rodarRoleta()">
-                🎲 Girar Roleta da Decisão
-            </button>
-        </div>
-    </section>
-
-    <div id="modal-cupom" class="modal">
+    <div id="modal-mural" class="app-modal">
         <div class="modal-content">
-            <span class="close-modal" onclick="fecharModal()">&times;</span>
-            <h3>🎟️ Seu Cupom foi Gerado!</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Segure na imagem para salvar ou clique no botão abaixo</p>
-            <div id="wrapper-imagem-cupom"></div>
-            <a id="btn-baixar-cupom" download="cupom-premiado.png" class="action-btn download-btn">Salvar na Galeria</a>
-        </div>
-    </div>
-
-    <div id="modal-mural" class="modal">
-        <div class="modal-content" style="text-align: left;">
-            <span class="close-modal" onclick="fecharModalMural()">&times;</span>
-            <h3 style="margin-bottom: 15px; text-align: center;">🖼️ Adicionar ao Mural</h3>
-            
-            <div class="date-form" style="background: transparent; border: none; padding: 0;">
-                <div class="input-group">
-                    <label>Tipo de mídia</label>
-                    <select id="mural-tipo" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); padding: 12px; border-radius: 12px; color: white;">
-                        <option value="foto">📷 Foto (Link/URL)</option>
-                        <option value="video">🎥 Vídeo (Link/URL - mp4)</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Link da Imagem ou Vídeo</label>
-                    <input type="text" id="mural-url" placeholder="Cole o link .jpg, .png ou .mp4 aqui...">
-                </div>
-                <div class="input-group">
-                    <label>Legenda da Polaroid</label>
-                    <input type="text" id="mural-legenda" placeholder="Ex: Nosso melhor beijo...">
-                </div>
-                <button class="action-btn" style="background: var(--accent-pink); color: white; padding: 12px; width: 100%; margin-top: 10px;" onclick="salvarMidiaMural()">
-                    ✨ Pendurar no Mural
-                </button>
+            <div class="modal-header">
+                <h3 style="font-size: 1.1rem;">Pendurar Memória</h3>
+                <button class="modal-close" onclick="fecharModalMural()">×</button>
             </div>
+            <div class="form-group">
+                <label>Tipo de Arquivo</label>
+                <select id="mural-tipo" class="app-input">
+                    <option value="foto">Foto (Link de Imagem)</option>
+                    <option value="video">Vídeo (Link de MP4 direto)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>URL / Link da Mídia</label>
+                <input type="url" id="mural-url" class="app-input" placeholder="https://exemplo.com/suafoto.jpg">
+            </div>
+            <div class="form-group">
+                <label>Legenda Curta</label>
+                <input type="text" id="mural-legenda" class="app-input" placeholder="Escreva um textinho fofo..." maxlength="50">
+            </div>
+            <button class="action-btn btn-full" onclick="salvarMidiaMural()">Salvar no Mural</button>
         </div>
     </div>
 
-    <nav class="bottom-nav">
-        <button class="nav-btn active" onclick="mudarTela('home-screen', this)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <div id="modal-cupom" class="app-modal">
+        <div class="modal-content" style="max-width: 440px; padding: 20px;">
+            <div class="modal-header" style="margin-bottom: 12px;">
+                <h3 style="font-size: 1rem; color: #fbbf24;">🎉 Cupom Resgatado!</h3>
+                <button class="modal-close" onclick="fecharModal()">×</button>
+            </div>
+            <div id="wrapper-imagem-cupom" style="width: 100%; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5);"></div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin: 10px 0; text-align: center;">Tire um print ou faça download para enviar ao seu amor!</p>
+            <a id="btn-baixar-cupom" class="action-btn btn-full" style="text-decoration: none; background: #10b981;">📥 Baixar Imagem do Cupom</a>
+        </div>
+    </div>
+
+    <div id="custom-toast-container">
+        <div id="custom-toast">Aviso do Sistema</div>
+    </div>
+
+    <nav class="nav-bar">
+        <button class="nav-btn active" onclick="mudarTela('tela-home', this)">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
             Início
         </button>
-        <button class="nav-btn" onclick="mudarTela('missions-screen', this)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
+        <button class="nav-btn" onclick="mudarTela('tela-mural', this)">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            Mural
+        </button>
+        <button class="nav-btn" onclick="mudarTela('tela-missoes', this)">
+            <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
             Missões
         </button>
-        <button class="nav-btn" onclick="mudarTela('shop-screen', this)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.21 9l-4.38-6.56c-.19-.28-.51-.42-.83-.42-.32 0-.64.14-.83.43L6.79 9H2c-.55 0-1 .45-1 1 0 .09.01.18.04.27l2.54 9.27c.23.84 1 1.46 1.87 1.46h12.91c.87 0 1.64-.62 1.87-1.46L21.96 10.27c.03-.09.04-.18.04-.27 0-.55-.45-1-1-1h-3.79zm-5.21-4.8L15.13 9H8.87L12 4.2z"/></svg>
+        <button class="nav-btn" onclick="mudarTela('tela-loja', this)">
+            <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
             Loja
         </button>
-        <button class="nav-btn" onclick="mudarTela('dates-screen', this)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
-            Encontros
+        <button class="nav-btn" onclick="mudarTela('tela-encontros', this)">
+            <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.5 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>
+            Dates
         </button>
     </nav>
 
-    <div id="custom-toast" style="display:none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.95); color: #000; padding: 12px 24px; border-radius: 40px; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 3000; transition: all 0.3s; font-size: 0.9rem; text-align: center; width: 85%; max-width: 320px;"></div>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
     <script src="script.js"></script>
 </body>
