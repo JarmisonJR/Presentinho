@@ -16,8 +16,8 @@ const database = firebase.database();
 // ==================================================================
 
 // ==================== CONFIGURAÇÕES DO APP ====================
-const DATA_NAMORO = new Date(2024, 5, 12, 20, 0, 0); 
-const MEU_WHATSAPP = "5585999999999"; 
+// Cronómetro zerado: começa a contar a partir do momento atual em que a app inicia
+const DATA_NAMORO = new Date(); 
 
 const opcoesRoleta = [
     "🍕 Noite da Pizza & Filme",
@@ -375,10 +375,18 @@ function agendarEncontro() {
     const horaVal = document.getElementById('time-input').value;
     const lugarVal = document.getElementById('place-input').value;
     const notasVal = document.getElementById('notes-input').value;
+    
+    // Captura o número digitado manualmente no ecrã e limpa espaços/traços
+    let telefoneManual = document.getElementById('phone-input').value.replace(/\D/g, '');
 
-    if (!dataVal || !horaVal || !lugarVal) {
-        mostrarAviso("❌ Preencha data, hora e lugar!");
+    if (!dataVal || !horaVal || !lugarVal || !telefoneManual) {
+        mostrarAviso("❌ Preencha data, hora, lugar e número de WhatsApp!");
         return;
+    }
+
+    // Adiciona o prefixo do país (55) automaticamente se o utilizador colocar só o DDD + número
+    if (telefoneManual.length <= 11) {
+        telefoneManual = "55" + telefoneManual;
     }
 
     const partesData = dataVal.split('-');
@@ -396,15 +404,18 @@ function agendarEncontro() {
         const textoMensagem = `✨ *NOSSO PRÓXIMO ENCONTRO* ✨%0A%0A` +
                               `📅 *Data:* ${dataFormatada}%0A` +
                               `⏰ *Horário:* ${horaVal}%0A` +
-                              `📍 *Local:* ${lugarVal}%0A%0A Te amo! ❤️`;
+                              `📍 *Local:* ${lugarVal}%0A` +
+                              `✨ *Notas:* ${notaFinal}%0A%0A Te amo! ❤️`;
         
-        window.location.href = `https://wa.me/${MEU_WHATSAPP}?text=${textoMensagem}`;
+        // Abre o link do WhatsApp usando o número introduzido manualmente
+        window.open(`https://api.whatsapp.com/send?phone=${telefoneManual}&text=${textoMensagem}`, '_blank');
     });
 
     document.getElementById('date-input').value = '';
     document.getElementById('time-input').value = '';
     document.getElementById('place-input').value = '';
     document.getElementById('notes-input').value = '';
+    document.getElementById('phone-input').value = '';
 }
 
 function renderizarEncontro() {
@@ -440,13 +451,6 @@ function desmarcarEncontro() {
             mostrarAviso("🗑️ Encontro desmarcado.");
         });
     }
-}
-
-function resetarMissoesParaTeste() {
-    const resetadas = missoes.map(m => ({ ...m, concluida: false }));
-    database.ref('missoes').set(resetadas).then(() => {
-        mostrarAviso("🔄 Missões resetadas na nuvem!");
-    });
 }
 
 const mensagensSurpresa = [
