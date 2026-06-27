@@ -1,5 +1,11 @@
-// CONFIGURAÇÃO DO NAMORO (Configure seu ano, mês-1, dia, hora)
+// ==================== CONFIGURAÇÕES DO APP ====================
+// 1. Altera aqui a data e hora do início do vosso namoro (Ano, Mês-1, Dia, Hora, Min, Seg)
 const DATA_NAMORO = new Date(2024, 5, 12, 20, 0, 0); 
+
+// 2. CONFIGURA O TEU NÚMERO DE WHATSAPP AQUI! (Apenas números: código do país + DDD + número)
+// Exemplo Brasil: "5585999999999" | Exemplo Portugal: "351912345678"
+const MEU_WHATSAPP = "5585985295558"; 
+// ==============================================================
 
 // Banco de Dados Inicial
 const missoesIniciais = [
@@ -12,11 +18,11 @@ const missoesIniciais = [
 const itensLojaIniciais = [
     { id: 1, emoji: "🍿", titulo: "Vale Cinema", custo: 30 },
     { id: 2, emoji: "🍕", titulo: "Noite da Pizza", custo: 60 },
-    { id: 3, emoji: "🍦", titulo: "Sorvetinho no Meio da Semana", custo: 20 },
+    { id: 3, emoji: "🍦", titulo: "Sorvetinho de Surpresa", custo: 20 },
     { id: 4, emoji: "💆‍♂️", titulo: "Massagem Premium", custo: 80 }
 ];
 
-// Carregar LocalStorage
+// Carregar Dados Salvos (Memória)
 let moedas = parseInt(localStorage.getItem('moedas')) || 0;
 let missoes = JSON.parse(localStorage.getItem('missoes')) || missoesIniciais;
 let encontroMarcado = JSON.parse(localStorage.getItem('encontroMarcado')) || null;
@@ -25,12 +31,12 @@ document.addEventListener("DOMContentLoaded", () => {
     atualizarInterfaceMoedas();
     renderizarMissoes();
     renderizarLoja();
-    renderizarEncontro(); // Carrega o encontro salvo ao iniciar
+    renderizarEncontro();
     setInterval(atualizarContadorCompleto, 1000);
     atualizarContadorCompleto();
 });
 
-// Navegação entre abas
+// Troca de Abas
 function mudarTela(screenId, botaoAtivo) {
     document.querySelectorAll('.app-screen').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -38,7 +44,7 @@ function mudarTela(screenId, botaoAtivo) {
     botaoAtivo.classList.add('active');
 }
 
-// Contador
+// Contador de Tempo
 function atualizarContadorCompleto() {
     const agora = new Date();
     const dif = agora - DATA_NAMORO;
@@ -49,7 +55,7 @@ function atualizarContadorCompleto() {
     document.getElementById('counter').innerHTML = `${dias}d ${horas}h ${minutos}m ${segundos}s`;
 }
 
-// Notificação flutuante
+// Aviso Toast
 function mostrarAviso(texto) {
     const toast = document.getElementById('custom-toast');
     toast.innerText = texto;
@@ -129,7 +135,7 @@ function comprarItem(custo, nome, emoji) {
     }
 }
 
-// Desenhar Cupom em Imagem
+// Criador de Imagem do Cupom (Canvas API)
 function gerarFotoCupom(tituloPrêmio, emojiPrêmio) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -197,39 +203,49 @@ function fecharModal() {
     document.getElementById('modal-cupom').style.display = 'none';
 }
 
-// SISTEMA DE AGENDAMENTO DE ENCONTROS (Mecânica Nova)
+// ENGINE DE AGENDAMENTO E REDIRECIONAMENTO WHATSAPP MOBILE
 function agendarEncontro() {
     const dataVal = document.getElementById('date-input').value;
     const horaVal = document.getElementById('time-input').value;
     const lugarVal = document.getElementById('place-input').value;
     const notasVal = document.getElementById('notes-input').value;
 
-    // Validação simples
     if (!dataVal || !horaVal || !lugarVal) {
-        mostrarAviso("❌ Por favor, preencha data, hora e lugar!");
+        mostrarAviso("❌ Preencha data, hora e lugar!");
         return;
     }
 
-    // Formatar data de AAAA-MM-DD para DD/MM/AAAA
     const partesData = dataVal.split('-');
     const dataFormatada = `${partesData[2]}/${partesData[1]}/${partesData[0]}`;
+    const notaFinal = notasVal || "Nenhuma nota extra adicionada.";
 
-    // Objeto do encontro
     encontroMarcado = {
         data: dataFormatada,
         hora: horaVal,
         lugar: lugarVal,
-        notas: notasVal || "Nenhuma nota extra adicionada."
+        notas: notaFinal
     };
 
-    // Salvar na memória
     localStorage.setItem('encontroMarcado', JSON.stringify(encontroMarcado));
-    
-    // Atualizar a interface
     renderizarEncontro();
-    mostrarAviso("💌 Encontro salvo e convite gerado!");
 
-    // Limpar campos do formulário
+    // Texto formatado com codificação URL para quebras de linha (%0A)
+    const textoMensagem = `✨ *NOSSO PRÓXIMO ENCONTRO* ✨%0A%0A` +
+                          `📅 *Data:* ${dataFormatada}%0A` +
+                          `⏰ *Horário:* ${horaVal}%0A` +
+                          `📍 *Local:* ${lugarVal}%0A%0A` +
+                          `📝 *Notas:* _${notaFinal}_%0A%0A` +
+                          `Te amo! Mal posso esperar! ❤️`;
+
+    const urlWhatsApp = `https://wa.me/${MEU_WHATSAPP}?text=${textoMensagem}`;
+
+    mostrarAviso("💌 Abrindo o WhatsApp...");
+    
+    // Altera a localização da janela ativa (perfeito para disparar o aplicativo nativo no telemóvel)
+    setTimeout(() => {
+        window.location.href = urlWhatsApp;
+    }, 1000);
+
     document.getElementById('date-input').value = '';
     document.getElementById('time-input').value = '';
     document.getElementById('place-input').value = '';
@@ -248,12 +264,9 @@ function renderizarEncontro() {
         return;
     }
 
-    // Se houver um encontro ativo, cria o convite estilizado
     container.innerHTML = `
         <div class="date-invitation-card">
-            <h4 style="color: var(--accent-pink); font-size: 1.1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                💖 Convite Confirmado
-            </h4>
+            <h4 style="color: var(--accent-pink); font-size: 1.1rem; margin-bottom: 12px;">💖 Convite Confirmado</h4>
             <p style="font-size: 0.95rem; margin-bottom: 6px;"><strong>📍 Local:</strong> ${encontroMarcado.lugar}</p>
             <p style="font-size: 0.95rem; margin-bottom: 6px;"><strong>📅 Data:</strong> ${encontroMarcado.data}</p>
             <p style="font-size: 0.95rem; margin-bottom: 12px;"><strong>⏰ Horário:</strong> ${encontroMarcado.hora}</p>
@@ -261,7 +274,7 @@ function renderizarEncontro() {
                 <p style="font-size: 0.85rem; color: var(--text-muted);"><strong>✨ Notas:</strong> ${encontroMarcado.notas}</p>
             </div>
             <button class="action-btn" style="background: rgba(255, 51, 102, 0.15); color: var(--accent-pink); font-size: 0.8rem; margin-top: 15px; width: 100%; border: 1px solid rgba(255, 51, 102, 0.2);" onclick="desmarcarEncontro()">
-                ❌ Desmarcar / Mudar Date
+                ❌ Desmarcar ou Mudar Date
             </button>
         </div>
     `;
@@ -276,7 +289,7 @@ function desmarcarEncontro() {
     }
 }
 
-// Sistema de teste
+// Botão de reset de missões (Temporário para teus testes)
 function resetarMissoesParaTeste() {
     missoes = missoes.map(m => ({ ...m, concluida: false }));
     localStorage.setItem('missoes', JSON.stringify(missoes));
