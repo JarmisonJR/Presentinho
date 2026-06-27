@@ -5,10 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Our Place</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
     <section id="home-screen" class="app-screen active">
+        <div id="anniversary-banner" class="anniversary-badge" style="display: none;">
+            🎉 Feliz Aniversário de Namoro! Hoje o dia é nosso! ❤️
+        </div>
+
         <div class="profile-area">
             <div class="avatar">✨</div>
             <div class="counter-container">
@@ -17,11 +22,20 @@
             </div>
         </div>
         
-        <div class="daily-box" onclick="abrirSurpresa()">
+        <div class="daily-box" onclick="abrirSurpresa()" style="margin-bottom: 24px;">
             <div style="font-size: 32px; margin-bottom: 8px;">🎁</div>
             <h3 style="font-size: 1.2rem; margin-bottom: 4px;">Cápsula do Dia</h3>
             <p style="color: var(--text-muted); font-size: 0.9rem;">Toque para revelar seu carinho diário.</p>
         </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="font-size: 1.2rem; font-weight: 700;">📸 Nosso Mural Vivo</h3>
+            <button class="action-btn" style="background: var(--accent-purple); color: white; font-size: 0.8rem; padding: 6px 12px; min-height: auto;" onclick="abrirModalGerenciarMural()">
+                ➕ Adicionar Mídia
+            </button>
+        </div>
+
+        <div class="polaroid-gallery" id="mural-container"></div>
     </section>
 
     <section id="missions-screen" class="app-screen">
@@ -72,8 +86,17 @@
         </div>
 
         <h3 style="font-size: 1.2rem; margin-top: 24px; margin-bottom: 12px;">📌 Próximo Date Agendado</h3>
-        <div id="convite-encontro-container">
+        <div id="convite-encontro-container" style="margin-bottom: 24px;">
             </div>
+
+        <h3 style="font-size: 1.2rem; margin-bottom: 12px; font-weight: 700;">🎰 Sem ideias para o Date?</h3>
+        <div class="roulette-box">
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 10px;">Gira a roleta para decidir o que comer ou fazer hoje!</p>
+            <div id="roulette-display" class="roulette-screen">❓ Clica para Girar ❓</div>
+            <button class="action-btn" style="background: var(--accent-purple); color: white; width: 100%; margin-top: 12px; padding: 12px;" onclick="rodarRoleta()">
+                🎲 Girar Roleta da Decisão
+            </button>
+        </div>
     </section>
 
     <div id="modal-cupom" class="modal">
@@ -83,6 +106,34 @@
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Segure na imagem para salvar ou clique no botão abaixo</p>
             <div id="wrapper-imagem-cupom"></div>
             <a id="btn-baixar-cupom" download="cupom-premiado.png" class="action-btn download-btn">Salvar na Galeria</a>
+        </div>
+    </div>
+
+    <div id="modal-mural" class="modal">
+        <div class="modal-content" style="text-align: left;">
+            <span class="close-modal" onclick="fecharModalMural()">&times;</span>
+            <h3 style="margin-bottom: 15px; text-align: center;">🖼️ Adicionar ao Mural</h3>
+            
+            <div class="date-form" style="background: transparent; border: none; padding: 0;">
+                <div class="input-group">
+                    <label>Tipo de mídia</label>
+                    <select id="mural-tipo" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); padding: 12px; border-radius: 12px; color: white;">
+                        <option value="foto">📷 Foto (Link/URL)</option>
+                        <option value="video">🎥 Vídeo (Link/URL - mp4)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Link da Imagem ou Vídeo</label>
+                    <input type="text" id="mural-url" placeholder="Cole o link .jpg, .png ou .mp4 aqui...">
+                </div>
+                <div class="input-group">
+                    <label>Legenda da Polaroid</label>
+                    <input type="text" id="mural-legenda" placeholder="Ex: Nosso melhor beijo...">
+                </div>
+                <button class="action-btn" style="background: var(--accent-pink); color: white; padding: 12px; width: 100%; margin-top: 10px;" onclick="salvarMidiaMural()">
+                    ✨ Pendurar no Mural
+                </button>
+            </div>
         </div>
     </div>
 
