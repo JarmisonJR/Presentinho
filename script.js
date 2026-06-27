@@ -1,13 +1,25 @@
 // ==================== CONFIGURAÇÕES DO APP ====================
-// 1. Altera aqui a data e hora do início do vosso namoro (Ano, Mês-1, Dia, Hora, Min, Seg)
 const DATA_NAMORO = new Date(2024, 5, 12, 20, 0, 0); 
+const MEU_WHATSAPP = "5585999999999"; 
 
-// 2. CONFIGURA O TEU NÚMERO DE WHATSAPP AQUI! (Apenas números: código do país + DDD + número)
-// Exemplo Brasil: "5585999999999" | Exemplo Portugal: "351912345678"
-const MEU_WHATSAPP = "5585985295558"; 
+const opcoesRoleta = [
+    "🍕 Noite da Pizza & Filme",
+    "🍣 Jantar de Sushi Namorados",
+    "🍿 Cinema com Pipoca Grande",
+    "🍦 Noite do Sorvete",
+    "🍔 Hambúrguer Artesanal",
+    "☕ Café Charmoso de Tarde",
+    "🎳 Noite de Jogos ou Bilhar",
+    "🍳 Cozinhar algo juntos"
+];
+
+// Mídias Iniciais do Mural caso a memória esteja vazia
+const muralInicial = [
+    { id: 1, tipo: "foto", url: "https://picsum.photos/300/300?random=1", legenda: "O início de tudo ✨" },
+    { id: 2, tipo: "foto", url: "https://picsum.photos/300/300?random=2", legenda: "Melhor date! 🍕" }
+];
 // ==============================================================
 
-// Banco de Dados Inicial
 const missoesIniciais = [
     { id: 1, titulo: "Mensagem de bom dia fofa", recompensa: 10, concluida: false },
     { id: 2, titulo: "Me mandar uma foto do seu sorriso hoje", recompensa: 15, concluida: false },
@@ -22,19 +34,135 @@ const itensLojaIniciais = [
     { id: 4, emoji: "💆‍♂️", titulo: "Massagem Premium", custo: 80 }
 ];
 
-// Carregar Dados Salvos (Memória)
+// Carregar Dados Salvos
 let moedas = parseInt(localStorage.getItem('moedas')) || 0;
 let missoes = JSON.parse(localStorage.getItem('missoes')) || missoesIniciais;
 let encontroMarcado = JSON.parse(localStorage.getItem('encontroMarcado')) || null;
+let itensMural = JSON.parse(localStorage.getItem('itensMural')) || muralInicial;
 
 document.addEventListener("DOMContentLoaded", () => {
     atualizarInterfaceMoedas();
     renderizarMissoes();
     renderizarLoja();
     renderizarEncontro();
+    renderizarMural(); // Desenha as fotos salvas
+    verificarAniversario();
     setInterval(atualizarContadorCompleto, 1000);
     atualizarContadorCompleto();
 });
+
+// ENGINE DO MURAL DEDICADO (ADICIONAR/REMOVER FOTOS E VÍDEOS)
+function renderizarMural() {
+    const container = document.getElementById('mural-container');
+    container.innerHTML = '';
+
+    if (itensMural.length === 0) {
+        container.innerHTML = `
+            <p style="color: var(--text-muted); font-size: 0.9rem; font-style: italic; text-align: center; width: 100%; padding-top: 40px;">
+                O mural está vazio. Adicione a primeira foto de vocês! 📸
+            </p>
+        `;
+        return;
+    }
+
+    itensMural.forEach(item => {
+        const elementoPolaroid = document.createElement('div');
+        elementoPolaroid.className = 'polaroid';
+        
+        // Se for foto, usa uma div com background-image, se for vídeo cria a tag <video> nativa
+        let midiaHTML = '';
+        if (item.tipo === "video") {
+            midiaHTML = `<div class="photo-placeholder"><video src="${item.url}" autoplay loop muted playsinline></video></div>`;
+        } else {
+            midiaHTML = `<div class="photo-placeholder" style="background-image: url('${item.url}');"></div>`;
+        }
+
+        elementoPolaroid.innerHTML = `
+            <button class="delete-media-btn" onclick="removerMidiaMural(${item.id})">×</button>
+            ${midiaHTML}
+            <div class="polaroid-caption">${item.legenda}</div>
+        `;
+        container.appendChild(elementoPolaroid);
+    });
+}
+
+function abrirModalGerenciarMural() {
+    document.getElementById('modal-mural').style.display = 'flex';
+}
+
+function fecharModalMural() {
+    document.getElementById('modal-mural').style.display = 'none';
+}
+
+function salvarMidiaMural() {
+    const tipo = document.getElementById('mural-tipo').value;
+    const url = document.getElementById('mural-url').value.trim();
+    const legenda = document.getElementById('mural-legenda').value.trim();
+
+    if (!url || !legenda) {
+        mostrarAviso("❌ Insira o link da mídia e a legenda!");
+        return;
+    }
+
+    const novaMidia = {
+        id: Date.now(), // Gera ID único com base no tempo
+        tipo: tipo,
+        url: url,
+        legenda: legenda
+    };
+
+    itensMural.push(novaMidia);
+    localStorage.setItem('itensMural', JSON.stringify(itensMural));
+    
+    renderizarMural();
+    fecharModalMural();
+    mostrarAviso("📸 Nova lembrança pendurada no mural!");
+
+    // Limpa inputs
+    document.getElementById('mural-url').value = '';
+    document.getElementById('mural-legenda').value = '';
+}
+
+function removerMidiaMural(id) {
+    if (confirm("Quer mesmo retirar esta foto/vídeo do mural?")) {
+        itensMural = itensMural.filter(item => item.id !== id);
+        localStorage.setItem('itensMural', JSON.stringify(itensMural));
+        renderizarMural();
+        mostrarAviso("🗑️ Mídia removida do mural.");
+    }
+}
+
+// ANIVERSÁRIO
+function verificarAniversario() {
+    const hoje = new Date();
+    if (hoje.getDate() === DATA_NAMORO.getDate()) {
+        document.getElementById('anniversary-banner').style.display = 'block';
+        setTimeout(() => {
+            confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+        }, 500);
+    }
+}
+
+// ROLETA
+function rodarRoleta() {
+    const display = document.getElementById('roulette-display');
+    display.classList.add('roulette-spinning');
+    
+    let voltas = 0;
+    const intervalo = setInterval(() => {
+        const aleatorio = opcoesRoleta[Math.floor(Math.random() * opcoesRoleta.length)];
+        display.innerText = aleatorio;
+        voltas++;
+        
+        if (voltas > 20) {
+            clearInterval(intervalo);
+            display.classList.remove('roulette-spinning');
+            const escolhaFinal = opcoesRoleta[Math.floor(Math.random() * opcoesRoleta.length)];
+            display.innerHTML = `✨ ${escolhaFinal} ✨`;
+            mostrarAviso("🎲 Destino escolhido!");
+        }
+    }, 100);
+}
 
 // Troca de Abas
 function mudarTela(screenId, botaoAtivo) {
@@ -44,7 +172,7 @@ function mudarTela(screenId, botaoAtivo) {
     botaoAtivo.classList.add('active');
 }
 
-// Contador de Tempo
+// Contador
 function atualizarContadorCompleto() {
     const agora = new Date();
     const dif = agora - DATA_NAMORO;
@@ -55,7 +183,6 @@ function atualizarContadorCompleto() {
     document.getElementById('counter').innerHTML = `${dias}d ${horas}h ${minutos}m ${segundos}s`;
 }
 
-// Aviso Toast
 function mostrarAviso(texto) {
     const toast = document.getElementById('custom-toast');
     toast.innerText = texto;
@@ -135,7 +262,7 @@ function comprarItem(custo, nome, emoji) {
     }
 }
 
-// Criador de Imagem do Cupom (Canvas API)
+// Criador de Imagem do Cupom
 function gerarFotoCupom(tituloPrêmio, emojiPrêmio) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -203,7 +330,7 @@ function fecharModal() {
     document.getElementById('modal-cupom').style.display = 'none';
 }
 
-// ENGINE DE AGENDAMENTO E REDIRECIONAMENTO WHATSAPP MOBILE
+// ENCONTROS
 function agendarEncontro() {
     const dataVal = document.getElementById('date-input').value;
     const horaVal = document.getElementById('time-input').value;
@@ -223,13 +350,12 @@ function agendarEncontro() {
         data: dataFormatada,
         hora: horaVal,
         lugar: lugarVal,
-        notas: notaFinal
+        notes: notaFinal
     };
 
     localStorage.setItem('encontroMarcado', JSON.stringify(encontroMarcado));
     renderizarEncontro();
 
-    // Texto formatado com codificação URL para quebras de linha (%0A)
     const textoMensagem = `✨ *NOSSO PRÓXIMO ENCONTRO* ✨%0A%0A` +
                           `📅 *Data:* ${dataFormatada}%0A` +
                           `⏰ *Horário:* ${horaVal}%0A` +
@@ -240,8 +366,6 @@ function agendarEncontro() {
     const urlWhatsApp = `https://wa.me/${MEU_WHATSAPP}?text=${textoMensagem}`;
 
     mostrarAviso("💌 Abrindo o WhatsApp...");
-    
-    // Altera a localização da janela ativa (perfeito para disparar o aplicativo nativo no telemóvel)
     setTimeout(() => {
         window.location.href = urlWhatsApp;
     }, 1000);
@@ -254,7 +378,6 @@ function agendarEncontro() {
 
 function renderizarEncontro() {
     const container = document.getElementById('convite-encontro-container');
-    
     if (!encontroMarcado) {
         container.innerHTML = `
             <p style="color: var(--text-muted); font-size: 0.9rem; font-style: italic; text-align: center; padding: 20px;">
@@ -271,7 +394,7 @@ function renderizarEncontro() {
             <p style="font-size: 0.95rem; margin-bottom: 6px;"><strong>📅 Data:</strong> ${encontroMarcado.data}</p>
             <p style="font-size: 0.95rem; margin-bottom: 12px;"><strong>⏰ Horário:</strong> ${encontroMarcado.hora}</p>
             <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border-left: 3px solid var(--accent-purple);">
-                <p style="font-size: 0.85rem; color: var(--text-muted);"><strong>✨ Notas:</strong> ${encontroMarcado.notas}</p>
+                <p style="font-size: 0.85rem; color: var(--text-muted);"><strong>✨ Notas:</strong> ${encontroMarcado.notes}</p>
             </div>
             <button class="action-btn" style="background: rgba(255, 51, 102, 0.15); color: var(--accent-pink); font-size: 0.8rem; margin-top: 15px; width: 100%; border: 1px solid rgba(255, 51, 102, 0.2);" onclick="desmarcarEncontro()">
                 ❌ Desmarcar ou Mudar Date
@@ -289,7 +412,6 @@ function desmarcarEncontro() {
     }
 }
 
-// Botão de reset de missões (Temporário para teus testes)
 function resetarMissoesParaTeste() {
     missoes = missoes.map(m => ({ ...m, concluida: false }));
     localStorage.setItem('missoes', JSON.stringify(missoes));
@@ -297,7 +419,6 @@ function resetarMissoesParaTeste() {
     mostrarAviso("🔄 Missões resetadas com sucesso!");
 }
 
-// Cápsula do Dia
 const mensagensSurpresa = [
     "💝 Você é o meu porto seguro. Te amo hoje mais do que ontem!",
     "🌹 Passando para lembrar que você tem o sorriso mais lindo desse mundo.",
