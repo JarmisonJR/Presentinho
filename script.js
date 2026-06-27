@@ -1,3 +1,20 @@
+// ==================== CONFIGURAÇÃO DO FIREBASE ====================
+const firebaseConfig = {
+    apiKey: "AIzaSyA6YNv3Hx-TtvawqnxW5hKTXllp73vLLf8",
+    authDomain: "please-a881f.firebaseapp.com",
+    databaseURL: "https://please-a881f-default-rtdb.firebaseio.com",
+    projectId: "please-a881f",
+    storageBucket: "please-a881f.firebasestorage.app",
+    messagingSenderId: "124810010305",
+    appId: "1:124810010305:web:6671cb2eb4e1d5ad7afe40",
+    measurementId: "G-YK57NTDZ8Z"
+};
+
+// Inicializa o Firebase
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+// ==================================================================
+
 // ==================== CONFIGURAÇÕES DO APP ====================
 const DATA_NAMORO = new Date(2024, 5, 12, 20, 0, 0); 
 const MEU_WHATSAPP = "5585999999999"; 
@@ -13,43 +30,81 @@ const opcoesRoleta = [
     "🍳 Cozinhar algo juntos"
 ];
 
-// Mídias Iniciais do Mural caso a memória esteja vazia
+// Mídias Iniciais do Mural caso a nuvem esteja vazia
 const muralInicial = [
     { id: 1, tipo: "foto", url: "https://picsum.photos/300/300?random=1", legenda: "O início de tudo ✨" },
     { id: 2, tipo: "foto", url: "https://picsum.photos/300/300?random=2", legenda: "Melhor date! 🍕" }
 ];
 // ==============================================================
 
-const missoesIniciais = [
-    { id: 1, titulo: "Mensagem de bom dia fofa", recompensa: 10, concluida: false },
-    { id: 2, titulo: "Me mandar uma foto do seu sorriso hoje", recompensa: 15, concluida: false },
-    { id: 3, titulo: "Preparar ou escolher o lanche do date", recompensa: 25, concluida: false },
-    { id: 4, titulo: "Massagem de 15 minutos sem reclamar", recompensa: 30, concluida: false }
-];
+// Variáveis Globais de Estado (Serão preenchidas pelo Firebase)
+let moedas = 0;
+let missoes = [];
+let encontroMarcado = null;
+let itensMural = [];
 
-const itensLojaIniciais = [
-    { id: 1, emoji: "🍿", titulo: "Vale Cinema", custo: 30 },
-    { id: 2, emoji: "🍕", titulo: "Noite da Pizza", custo: 60 },
-    { id: 3, emoji: "🍦", titulo: "Sorvetinho de Surpresa", custo: 20 },
-    { id: 4, emoji: "💆‍♂️", titulo: "Massagem Premium", custo: 80 }
-];
-
-// Carregar Dados Salvos
-let moedas = parseInt(localStorage.getItem('moedas')) || 0;
-let missoes = JSON.parse(localStorage.getItem('missoes')) || missoesIniciais;
-let encontroMarcado = JSON.parse(localStorage.getItem('encontroMarcado')) || null;
-let itensMural = JSON.parse(localStorage.getItem('itensMural')) || muralInicial;
-
+// Escutar dados do Firebase em Tempo Real (Sincronização entre aparelhos)
 document.addEventListener("DOMContentLoaded", () => {
-    atualizarInterfaceMoedas();
-    renderizarMissoes();
-    renderizarLoja();
-    renderizarEncontro();
-    renderizarMural(); // Desenha as fotos salvas
+    // 1. Sincroniza o Mural Vivo
+    database.ref('mural').on('value', (snapshot) => {
+        const dados = snapshot.val();
+        itensMural = dados ? Object.keys(dados).map(key => ({ id: key, ...dados[key] })) : [];
+        renderizarMural();
+    });
+
+    // 2. Sincroniza o Encontro Marcado
+    database.ref('encontro').on('value', (snapshot) => {
+        encontroMarcado = snapshot.val();
+        renderizarEncontro();
+    });
+
+    // 3. Sincroniza as Moedas
+    database.ref('moedas').on('value', (snapshot) => {
+        moedas = snapshot.val() || 0;
+        document.getElementById('moedas-count').innerText = moedas;
+    });
+
+    // 4. Sincroniza as Missões
+    database.ref('missoes').on('value', (snapshot) => {
+        const dados = snapshot.val();
+        if (dados) {
+            missoes = dados;
+            renderizarMissoes();
+        } else {
+            const iniciais = [
+                { id: 1, titulo: "Mensagem de bom dia fofa", recompensa: 10, concluida: false },
+                { id: 2, titulo: "Me mandar uma foto do seu sorriso hoje", recompensa: 15, concluida: false },
+                { id: 3, titulo: "Preparar ou escolher o lanche do date", recompensa: 25, concluida: false },
+                { id: 4, titulo: "Massagem de 15 minutos sem reclamar", recompensa: 30, concluida: false }
+            ];
+            database.ref('missoes').set(iniciais);
+        }
+    });
+
     verificarAniversario();
     setInterval(atualizarContadorCompleto, 1000);
     atualizarContadorCompleto();
 });
+
+// NOVA FUNÇÃO PARA EXIBIR AVISOS NO MEIO DA TELA (POP-UP)
+function mostrarAviso(texto) {
+    const container = document.getElementById('custom-toast-container');
+    const toastCard = document.getElementById('custom-toast');
+    
+    toastCard.innerText = texto;
+    container.style.display = 'flex';
+    
+    setTimeout(() => {
+        container.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        container.classList.remove('show');
+        setTimeout(() => {
+            container.style.display = 'none';
+        }, 250);
+    }, 3500);
+}
 
 // ENGINE DO MURAL DEDICADO (ADICIONAR/REMOVER FOTOS E VÍDEOS)
 function renderizarMural() {
@@ -69,7 +124,6 @@ function renderizarMural() {
         const elementoPolaroid = document.createElement('div');
         elementoPolaroid.className = 'polaroid';
         
-        // Se for foto, usa uma div com background-image, se for vídeo cria a tag <video> nativa
         let midiaHTML = '';
         if (item.tipo === "video") {
             midiaHTML = `<div class="photo-placeholder"><video src="${item.url}" autoplay loop muted playsinline></video></div>`;
@@ -78,7 +132,7 @@ function renderizarMural() {
         }
 
         elementoPolaroid.innerHTML = `
-            <button class="delete-media-btn" onclick="removerMidiaMural(${item.id})">×</button>
+            <button class="delete-media-btn" onclick="removerMidiaMural('${item.id}')">×</button>
             ${midiaHTML}
             <div class="polaroid-caption">${item.legenda}</div>
         `;
@@ -104,31 +158,25 @@ function salvarMidiaMural() {
         return;
     }
 
-    const novaMidia = {
-        id: Date.now(), // Gera ID único com base no tempo
+    // Salva na nuvem do Firebase
+    database.ref('mural').push({
         tipo: tipo,
         url: url,
         legenda: legenda
-    };
+    }).then(() => {
+        fecharModalMural();
+        mostrarAviso("📸 Nova lembrança sincronizada no mural!");
+    });
 
-    itensMural.push(novaMidia);
-    localStorage.setItem('itensMural', JSON.stringify(itensMural));
-    
-    renderizarMural();
-    fecharModalMural();
-    mostrarAviso("📸 Nova lembrança pendurada no mural!");
-
-    // Limpa inputs
     document.getElementById('mural-url').value = '';
     document.getElementById('mural-legenda').value = '';
 }
 
 function removerMidiaMural(id) {
     if (confirm("Quer mesmo retirar esta foto/vídeo do mural?")) {
-        itensMural = itensMural.filter(item => item.id !== id);
-        localStorage.setItem('itensMural', JSON.stringify(itensMural));
-        renderizarMural();
-        mostrarAviso("🗑️ Mídia removida do mural.");
+        database.ref(`mural/${id}`).remove().then(() => {
+            mostrarAviso("🗑️ Mídia removida do mural.");
+        });
     }
 }
 
@@ -159,7 +207,7 @@ function rodarRoleta() {
             display.classList.remove('roulette-spinning');
             const escolhaFinal = opcoesRoleta[Math.floor(Math.random() * opcoesRoleta.length)];
             display.innerHTML = `✨ ${escolhaFinal} ✨`;
-            mostrarAviso("🎲 Destino escolhido!");
+            mostrarAviso(`🎲 Destino escolhido!\n${escolhaFinal}`);
         }
     }, 100);
 }
@@ -183,22 +231,6 @@ function atualizarContadorCompleto() {
     document.getElementById('counter').innerHTML = `${dias}d ${horas}h ${minutos}m ${segundos}s`;
 }
 
-function mostrarAviso(texto) {
-    const toast = document.getElementById('custom-toast');
-    toast.innerText = texto;
-    toast.style.display = 'block';
-    toast.style.opacity = '1';
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.style.display = 'none', 300);
-    }, 3500);
-}
-
-function atualizarInterfaceMoedas() {
-    document.getElementById('moedas-count').innerText = moedas;
-    localStorage.setItem('moedas', moedas);
-}
-
 // Renderizar Missões
 function renderizarMissoes() {
     const container = document.getElementById('lista-missoes');
@@ -220,14 +252,15 @@ function renderizarMissoes() {
 }
 
 function completarMissao(id) {
-    const missao = missoes.find(m => m.id === id);
-    if (missao && !missao.concluida) {
-        missao.concluida = true;
-        moedas += missao.recompensa;
-        localStorage.setItem('missoes', JSON.stringify(missoes));
-        atualizarInterfaceMoedas();
-        renderizarMissoes();
-        mostrarAviso(`🪙 +${missao.recompensa} moedas adicionadas!`);
+    const index = missoes.findIndex(m => m.id === id);
+    if (index !== -1 && !missoes[index].concluida) {
+        missoes[index].concluida = true;
+        const novaRecompensa = missoes[index].recompensa;
+        
+        database.ref('missoes').set(missoes);
+        database.ref('moedas').set(moedas + novaRecompensa).then(() => {
+            mostrarAviso(`🪙 +${novaRecompensa} moedas adicionadas para o casal!`);
+        });
     }
 }
 
@@ -235,6 +268,12 @@ function completarMissao(id) {
 function renderizarLoja() {
     const container = document.getElementById('lista-loja');
     container.innerHTML = '';
+    const itensLojaIniciais = [
+        { id: 1, emoji: "🍿", titulo: "Vale Cinema", custo: 30 },
+        { id: 2, emoji: "🍕", titulo: "Noite da Pizza", custo: 60 },
+        { id: 3, emoji: "🍦", titulo: "Sorvetinho de Surpresa", custo: 20 },
+        { id: 4, emoji: "💆‍♂️", titulo: "Massagem Premium", custo: 80 }
+    ];
     itensLojaIniciais.forEach(item => {
         const card = document.createElement('div');
         card.className = 'card-item shop-card';
@@ -254,9 +293,9 @@ function renderizarLoja() {
 
 function comprarItem(custo, nome, emoji) {
     if (moedas >= custo) {
-        moedas -= custo;
-        atualizarInterfaceMoedas();
-        gerarFotoCupom(nome, emoji);
+        database.ref('moedas').set(moedas - custo).then(() => {
+            gerarFotoCupom(nome, emoji);
+        });
     } else {
         mostrarAviso(`❌ Moedas insuficientes! Faltam ${custo - moedas} moedas.`);
     }
@@ -346,29 +385,21 @@ function agendarEncontro() {
     const dataFormatada = `${partesData[2]}/${partesData[1]}/${partesData[0]}`;
     const notaFinal = notasVal || "Nenhuma nota extra adicionada.";
 
-    encontroMarcado = {
+    const novoEncontro = {
         data: dataFormatada,
         hora: horaVal,
         lugar: lugarVal,
         notes: notaFinal
     };
 
-    localStorage.setItem('encontroMarcado', JSON.stringify(encontroMarcado));
-    renderizarEncontro();
-
-    const textoMensagem = `✨ *NOSSO PRÓXIMO ENCONTRO* ✨%0A%0A` +
-                          `📅 *Data:* ${dataFormatada}%0A` +
-                          `⏰ *Horário:* ${horaVal}%0A` +
-                          `📍 *Local:* ${lugarVal}%0A%0A` +
-                          `📝 *Notas:* _${notaFinal}_%0A%0A` +
-                          `Te amo! Mal posso esperar! ❤️`;
-
-    const urlWhatsApp = `https://wa.me/${MEU_WHATSAPP}?text=${textoMensagem}`;
-
-    mostrarAviso("💌 Abrindo o WhatsApp...");
-    setTimeout(() => {
-        window.location.href = urlWhatsApp;
-    }, 1000);
+    database.ref('encontro').set(novoEncontro).then(() => {
+        const textoMensagem = `✨ *NOSSO PRÓXIMO ENCONTRO* ✨%0A%0A` +
+                              `📅 *Data:* ${dataFormatada}%0A` +
+                              `⏰ *Horário:* ${horaVal}%0A` +
+                              `📍 *Local:* ${lugarVal}%0A%0A Te amo! ❤️`;
+        
+        window.location.href = `https://wa.me/${MEU_WHATSAPP}?text=${textoMensagem}`;
+    });
 
     document.getElementById('date-input').value = '';
     document.getElementById('time-input').value = '';
@@ -405,18 +436,17 @@ function renderizarEncontro() {
 
 function desmarcarEncontro() {
     if(confirm("Deseja mesmo desmarcar ou alterar este encontro?")) {
-        encontroMarcado = null;
-        localStorage.removeItem('encontroMarcado');
-        renderizarEncontro();
-        mostrarAviso("🗑️ Encontro desmarcado.");
+        database.ref('encontro').remove().then(() => {
+            mostrarAviso("🗑️ Encontro desmarcado.");
+        });
     }
 }
 
 function resetarMissoesParaTeste() {
-    missoes = missoes.map(m => ({ ...m, concluida: false }));
-    localStorage.setItem('missoes', JSON.stringify(missoes));
-    renderizarMissoes();
-    mostrarAviso("🔄 Missões resetadas com sucesso!");
+    const resetadas = missoes.map(m => ({ ...m, concluida: false }));
+    database.ref('missoes').set(resetadas).then(() => {
+        mostrarAviso("🔄 Missões resetadas na nuvem!");
+    });
 }
 
 const mensagensSurpresa = [
