@@ -25,14 +25,13 @@ body {
     overflow: hidden;
 }
 
-/* Telas otimizadas para scroll no telemóvel */
 .app-screen {
     flex: 1;
     display: none;
     flex-direction: column;
     padding: 24px 20px;
     overflow-y: auto;
-    padding-bottom: 120px; /* Espaço para não cobrir o menu inferior */
+    padding-bottom: 120px;
 }
 
 .app-screen.active {
@@ -40,9 +39,22 @@ body {
     animation: screenSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.anniversary-badge {
+    background: linear-gradient(90deg, #ff3366, #ff758c);
+    color: white;
+    text-align: center;
+    padding: 10px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 15px rgba(255, 51, 102, 0.4);
+    animation: pulse 2s infinite;
+}
+
 .profile-area {
     text-align: center;
-    margin: 20px 0;
+    margin: 10px 0;
 }
 
 .avatar {
@@ -86,8 +98,83 @@ body {
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
 }
 
-.daily-box:active {
-    transform: scale(0.97);
+/* SISTEMA DA GALERIA HORIZONTAL DINÂMICA */
+.polaroid-gallery {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding: 15px 8px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    min-height: 250px;
+}
+
+.polaroid-gallery::-webkit-scrollbar {
+    display: none;
+}
+
+.polaroid {
+    background: #ffffff;
+    padding: 10px 10px 16px 10px;
+    border-radius: 4px;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.5);
+    min-width: 190px;
+    max-width: 190px;
+    scroll-snap-align: start;
+    transform: rotate(var(--rotation, -2deg));
+    position: relative;
+    transition: all 0.2s;
+}
+
+.polaroid:nth-child(even) { --rotation: 3.5deg; }
+.polaroid:nth-child(3n) { --rotation: -2.5deg; }
+
+.photo-placeholder {
+    width: 100%;
+    height: 160px;
+    background-size: cover;
+    background-position: center;
+    background-color: #1a1a24;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+/* Garante que vídeos caibam perfeitamente na caixinha da foto */
+.photo-placeholder video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.polaroid-caption {
+    color: #18181b;
+    font-family: 'Georgia', serif;
+    font-size: 0.85rem;
+    text-align: center;
+    margin-top: 12px;
+    font-weight: bold;
+    word-break: break-word;
+}
+
+/* Botão discreto e fofinho para apagar a mídia do mural */
+.delete-media-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ff3366;
+    color: white;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+    cursor: pointer;
+    z-index: 10;
 }
 
 .moedas-dashboard {
@@ -137,16 +224,11 @@ button.action-btn {
     font-size: 0.85rem;
     cursor: pointer;
     transition: all 0.2s;
-    min-height: 40px; /* Facilita o clique no mobile */
+    min-height: 40px;
 }
 
 button.action-btn:active {
     transform: scale(0.95);
-}
-
-button.action-btn:disabled {
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.2);
 }
 
 .shop-grid {
@@ -168,7 +250,6 @@ button.action-btn:disabled {
     border-radius: 10px;
 }
 
-/* Formulário de Encontros Mobile-First */
 .date-form {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
@@ -202,7 +283,6 @@ button.action-btn:disabled {
     width: 100%;
 }
 
-/* Melhora inputs nativos de data/hora no iOS/Android */
 .input-group input[type="date"], .input-group input[type="time"] {
     color-scheme: dark;
 }
@@ -216,7 +296,35 @@ button.action-btn:disabled {
     overflow: hidden;
 }
 
-/* Menu de Navegação Inferior Estilo Barra iOS */
+.roulette-box {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 18px;
+    text-align: center;
+}
+
+.roulette-screen {
+    background: #0d0e12;
+    border: 2px dashed var(--accent-purple);
+    padding: 20px;
+    border-radius: 14px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #fff;
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s ease;
+}
+
+.roulette-spinning {
+    animation: vibrate 0.1s infinite;
+    color: var(--accent-pink);
+    border-color: var(--accent-pink);
+}
+
 .bottom-nav {
     position: fixed;
     bottom: 0;
@@ -251,7 +359,6 @@ button.action-btn:disabled {
     color: var(--accent-purple);
 }
 
-/* Modal */
 .modal {
     display: none; 
     position: fixed;
@@ -305,4 +412,24 @@ button.action-btn:disabled {
 @keyframes screenSlideIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+@keyframes vibrate {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    10% { transform: translate(-1px, -2px) rotate(-1deg); }
+    20% { transform: translate(-3px, 0px) rotate(1deg); }
+    30% { transform: translate(0px, 2px) rotate(0deg); }
+    40% { transform: translate(1px, -1px) rotate(1deg); }
+    50% { transform: translate(-1px, 2px) rotate(-1deg); }
+    60% { transform: translate(-3px, 1px) rotate(0deg); }
+    70% { transform: translate(2px, 1px) rotate(-1deg); }
+    80% { transform: translate(-1px, -1px) rotate(1deg); }
+    90% { transform: translate(2px, 2px) rotate(0deg); }
+    100% { transform: translate(1px, -2px) rotate(-1deg); }
 }
