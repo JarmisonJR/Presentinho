@@ -54,15 +54,12 @@
         </div>
         
         <div id="lista-missoes"></div>
-        <button class="action-btn btn-full" style="background: #334155; margin-top: 15px; font-size: 0.8rem;" onclick="resetarMissoesParaTeste()">🔄 Resetar Missões (Teste)</button>
-    </div>
-
+        </div>
     <div id="tela-loja" class="app-screen">
         <h3 class="section-title">🛍️ Lojinha de Cupons</h3>
         <div id="lista-loja"></div>
     </div>
-
-    <div id="tela-encontros" class="app-screen">
+<div id="tela-encontros" class="app-screen">
         <h3 class="section-title">🌹 Agendar Próximo Encontro</h3>
         <div class="roulette-container" style="text-align: left; padding: 18px;">
             <div class="form-group">
@@ -81,6 +78,10 @@
                 <label>Alguma nota ou aviso especial?</label>
                 <input type="text" id="notes-input" class="app-input" placeholder="Ex: Levar casaco, ir com roupa bonita...">
             </div>
+            <div class="form-group">
+                <label>Número do WhatsApp (com DDD, só números)</label>
+                <input type="tel" id="phone-input" class="app-input" placeholder="Ex: 85999998888">
+            </div>
             <button class="action-btn btn-full" style="background: var(--accent-pink);" onclick="agendarEncontro()">
                 💌 Enviar Convite por WhatsApp
             </button>
@@ -89,7 +90,6 @@
         <h3 class="section-title">📌 Status do Date</h3>
         <div id="convite-encontro-container"></div>
     </div>
-
     <div id="modal-mural" class="app-modal">
         <div class="modal-content">
             <div class="modal-header">
