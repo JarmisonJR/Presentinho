@@ -170,36 +170,53 @@ function salvarMidiaMural() {
         return;
     }
 
+    // Para evitar que o banco trave com arquivos gigantescos, limitamos fotos muito pesadas
+    if (ficheiro.size > 2 * 1024 * 1024) { // Limite de 2MB por foto
+        mostrarAviso("❌ A foto é muito pesada! Escolha uma imagem de até 2MB.");
+        return;
+    }
+
     const tipo = ficheiro.type.includes('video') ? 'video' : 'foto';
 
-    mostrarAviso("⏳ Enviando arquivo para a nuvem... Aguarde.");
+    if (tipo === 'video') {
+        mostrarAviso("⚠️ O armazenamento gratuito direto via banco suporta apenas fotos. Escolha uma imagem!");
+        return;
+    }
 
-    // 1. Nome único
-    const nomeUnico = Date.now() + "_" + ficheiro.name;
+    mostrarAviso("⏳ Convertendo e enviando lembrança... Aguarde.");
+
+    // Leitor de arquivos do navegador para converter a imagem em texto Base64
+    const reader = new FileReader();
     
-    // 2. Referência corrigida usando a instância ativa do Firebase
-    const storageRef = firebase.storage().ref().child('mural/' + nomeUnico);
+    reader.onload = function(event) {
+        const base64Url = event.target.result;
 
-    // 3. Executa o upload com monitoramento de falhas direto
-    storageRef.put(ficheiro).then((snapshot) => {
-        return snapshot.ref.getDownloadURL();
-    }).then((urlGerada) => {
-        return database.ref('mural').push({
+        // Salva diretamente na coleção 'mural' do Realtime Database
+        database.ref('mural').push({
             tipo: tipo,
-            url: urlGerada,
-            legenda: legenda
+            url: base64Url, // A própria imagem convertida em texto
+            legenda: legenda,
+            dataCriacao: Date.now()
+        }).then(() => {
+            fecharModalMural();
+            mostrarAviso("📸 Lembrança sincronizada com sucesso no mural!");
+            elFile.value = '';
+            elLegenda.value = '';
+        }).catch((erro) => {
+            console.error("Erro ao salvar no banco:", erro);
+            fecharModalMural();
+            mostrarAviso("❌ Falha ao salvar no banco: " + erro.message);
         });
-    }).then(() => {
+    };
+
+    reader.onerror = function(erro) {
+        console.error("Erro na leitura do arquivo:", erro);
         fecharModalMural();
-        mostrarAviso("📸 Lembrança sincronizada com sucesso no mural!");
-        elFile.value = '';
-        elLegenda.value = '';
-    }).catch((erro) => {
-        // ESSA PARTE VAI IMPEDIR A MENSAGEM DE FICAR TRAVADA
-        console.error("Erro detalhado do upload:", erro);
-        fecharModalMural(); // Fecha o modal para destravar o site
-        mostrarAviso("❌ Falha no Firebase: " + erro.message);
-    });
+        mostrarAviso("❌ Erro ao processar o arquivo de imagem.");
+    };
+
+    // Dispara a leitura da imagem
+    reader.readAsDataURL(ficheiro);
 }
 
 function removerMidiaMural(id) {
