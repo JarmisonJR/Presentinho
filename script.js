@@ -170,21 +170,20 @@ function salvarMidiaMural() {
         return;
     }
 
-    // Identifica dinamicamente se o arquivo anexado é foto ou vídeo
     const tipo = ficheiro.type.includes('video') ? 'video' : 'foto';
 
     mostrarAviso("⏳ Enviando arquivo para a nuvem... Aguarde.");
 
-    // 1. Gera um nome único para o arquivo no Storage para evitar sobreposições
+    // 1. Nome único
     const nomeUnico = Date.now() + "_" + ficheiro.name;
-    const storageRef = firebase.storage().ref('mural/' + nomeUnico);
+    
+    // 2. Referência corrigida usando a instância ativa do Firebase
+    const storageRef = firebase.storage().ref().child('mural/' + nomeUnico);
 
-    // 2. Executa o upload do anexo
+    // 3. Executa o upload com monitoramento de falhas direto
     storageRef.put(ficheiro).then((snapshot) => {
-        // 3. Captura a URL pública definitiva gerada pelo Firebase
         return snapshot.ref.getDownloadURL();
     }).then((urlGerada) => {
-        // 4. Salva a URL e os metadados estruturados no Realtime Database
         return database.ref('mural').push({
             tipo: tipo,
             url: urlGerada,
@@ -193,13 +192,13 @@ function salvarMidiaMural() {
     }).then(() => {
         fecharModalMural();
         mostrarAviso("📸 Lembrança sincronizada com sucesso no mural!");
-        
-        // Limpa o formulário
         elFile.value = '';
         elLegenda.value = '';
     }).catch((erro) => {
-        console.error("Erro no upload do arquivo:", erro);
-        mostrarAviso("❌ Falha ao carregar o arquivo para a nuvem.");
+        // ESSA PARTE VAI IMPEDIR A MENSAGEM DE FICAR TRAVADA
+        console.error("Erro detalhado do upload:", erro);
+        fecharModalMural(); // Fecha o modal para destravar o site
+        mostrarAviso("❌ Falha no Firebase: " + erro.message);
     });
 }
 
