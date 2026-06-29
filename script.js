@@ -29,12 +29,6 @@ const opcoesRoleta = [
     "🎳 Noite de Jogos ou Bilhar",
     "🍳 Cozinhar algo juntos"
 ];
-
-// Mídias Iniciais do Mural caso a nuvem esteja vazia
-const muralInicial = [
-    { id: 1, tipo: "foto", url: "https://picsum.photos/300/300?random=1", legenda: "O início de tudo ✨" },
-    { id: 2, tipo: "foto", url: "https://picsum.photos/300/300?random=2", legenda: "Melhor date! 🍕" }
-];
 // ==============================================================
 
 // Variáveis Globais de Estado (Serão preenchidas pelo Firebase)
@@ -82,10 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     verificarAniversario();
-    
-    // ATIVAÇÃO DOS CUPONS DA LOJA NO CARREGAMENTO
     renderizarLoja(); 
-    
     setInterval(atualizarContadorCompleto, 1000);
     atualizarContadorCompleto();
 });
@@ -94,6 +85,8 @@ document.addEventListener("DOMContentLoaded", () => {
 function mostrarAviso(texto) {
     const container = document.getElementById('custom-toast-container');
     const toastCard = document.getElementById('custom-toast');
+    
+    if(!container || !toastCard) return;
     
     toastCard.innerText = texto;
     container.style.display = 'flex';
@@ -110,15 +103,17 @@ function mostrarAviso(texto) {
     }, 3500);
 }
 
-// ENGINE DO MURAL DEDICADO (ADICIONAR/REMOVER FOTOS E VÍDEOS)
+// ENGINE DO MURAL DEDICADO (RENDERIZAR DO BANCO DE DADOS)
 function renderizarMural() {
     const container = document.getElementById('mural-container');
+    if (!container) return;
+    
     container.innerHTML = '';
 
     if (itensMural.length === 0) {
         container.innerHTML = `
             <p style="color: var(--text-muted); font-size: 0.9rem; font-style: italic; text-align: center; width: 100%; padding-top: 40px;">
-                O mural está vazio. Adicione a primeira foto de vocês! 📸
+                O mural está vazio. Adicione a primeira foto ou vídeo de vocês! 📸
             </p>
         `;
         return;
@@ -132,7 +127,7 @@ function renderizarMural() {
         if (item.tipo === "video") {
             midiaHTML = `<div class="photo-placeholder"><video src="${item.url}" autoplay loop muted playsinline></video></div>`;
         } else {
-            midiaHTML = `<div class="photo-placeholder" style="background-image: url('${item.url}');"></div>`;
+            midiaHTML = `<div class="photo-placeholder" style="background-image: url('${item.url}'); background-size: cover; background-position: center;"></div>`;
         }
 
         elementoPolaroid.innerHTML = `
@@ -152,32 +147,64 @@ function fecharModalMural() {
     document.getElementById('modal-mural').style.display = 'none';
 }
 
+// SALVAR MÍDIA VIA UPLOAD (FIREBASE STORAGE + REALTIME DATABASE)
 function salvarMidiaMural() {
-    const tipo = document.getElementById('mural-tipo').value;
-    const url = document.getElementById('mural-url').value.trim();
-    const legenda = document.getElementById('mural-legenda').value.trim();
+    const elFile = document.getElementById('mural-file');
+    const elLegenda = document.getElementById('mural-legenda');
 
-    if (!url || !legenda) {
-        mostrarAviso("❌ Insira o link da mídia e a legenda!");
+    if (!elFile || !elLegenda) {
+        mostrarAviso("❌ Erro técnico: Elementos do formulário não encontrados!");
         return;
     }
 
-    // Salva na nuvem do Firebase
-    database.ref('mural').push({
-        tipo: tipo,
-        url: url,
-        legenda: legenda
+    const ficheiro = elFile.files[0];
+    const legenda = elLegenda.value.trim();
+
+    if (!ficheiro) {
+        mostrarAviso("❌ Por favor, selecione uma foto ou vídeo!");
+        return;
+    }
+
+    if (!legenda) {
+        mostrarAviso("❌ Insira uma legenda para a sua lembrança!");
+        return;
+    }
+
+    // Identifica dinamicamente se o arquivo anexado é foto ou vídeo
+    const tipo = ficheiro.type.includes('video') ? 'video' : 'foto';
+
+    mostrarAviso("⏳ Enviando arquivo para a nuvem... Aguarde.");
+
+    // 1. Gera um nome único para o arquivo no Storage para evitar sobreposições
+    const nomeUnico = Date.now() + "_" + ficheiro.name;
+    const storageRef = firebase.storage().ref('mural/' + nomeUnico);
+
+    // 2. Executa o upload do anexo
+    storageRef.put(ficheiro).then((snapshot) => {
+        // 3. Captura a URL pública definitiva gerada pelo Firebase
+        return snapshot.ref.getDownloadURL();
+    }).then((urlGerada) => {
+        // 4. Salva a URL e os metadados estruturados no Realtime Database
+        return database.ref('mural').push({
+            tipo: tipo,
+            url: urlGerada,
+            legenda: legenda
+        });
     }).then(() => {
         fecharModalMural();
-        mostrarAviso("📸 Nova lembrança sincronizada no mural!");
+        mostrarAviso("📸 Lembrança sincronizada com sucesso no mural!");
+        
+        // Limpa o formulário
+        elFile.value = '';
+        elLegenda.value = '';
+    }).catch((erro) => {
+        console.error("Erro no upload do arquivo:", erro);
+        mostrarAviso("❌ Falha ao carregar o arquivo para a nuvem.");
     });
-
-    document.getElementById('mural-url').value = '';
-    document.getElementById('mural-legenda').value = '';
 }
 
 function removerMidiaMural(id) {
-    if (confirm("Quer mesmo retirar esta foto/vídeo do mural?")) {
+    if (confirm("Quer mesmo retirar esta lembrança do mural?")) {
         database.ref(`mural/${id}`).remove().then(() => {
             mostrarAviso("🗑️ Mídia removida do mural.");
         });
@@ -187,8 +214,9 @@ function removerMidiaMural(id) {
 // ANIVERSÁRIO
 function verificarAniversario() {
     const hoje = new Date();
-    if (hoje.getDate() === DATA_NAMORO.getDate()) {
-        document.getElementById('anniversary-banner').style.display = 'block';
+    if (hoje.getDate() === DATA_NAMORO.getDate() && hoje.getMonth() === DATA_NAMORO.getMonth()) {
+        const banner = document.getElementById('anniversary-banner');
+        if (banner) banner.style.display = 'block';
         setTimeout(() => {
             confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
         }, 500);
@@ -198,6 +226,8 @@ function verificarAniversario() {
 // ROLETA
 function rodarRoleta() {
     const display = document.getElementById('roulette-display');
+    if (!display) return;
+    
     display.classList.add('roulette-spinning');
     
     let voltas = 0;
@@ -220,24 +250,31 @@ function rodarRoleta() {
 function mudarTela(screenId, botaoAtivo) {
     document.querySelectorAll('.app-screen').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(screenId).classList.add('active');
-    botaoAtivo.classList.add('active');
+    
+    const telaAlvo = document.getElementById(screenId);
+    if(telaAlvo) telaAlvo.classList.add('active');
+    if(botaoAtivo) botaoAtivo.classList.add('active');
 }
 
 // Contador
 function atualizarContadorCompleto() {
+    const elCounter = document.getElementById('counter');
+    if (!elCounter) return;
+
     const agora = new Date();
     const dif = agora - DATA_NAMORO;
     const dias = Math.floor(dif / (1000 * 60 * 60 * 24));
     const horas = Math.floor((dif % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutos = Math.floor((dif % (1000 * 60 * 60)) / (1000 * 60));
     const segundos = Math.floor((dif % (1000 * 60)) / 1000);
-    document.getElementById('counter').innerHTML = `${dias}d ${horas}h ${minutos}m ${segundos}s`;
+    elCounter.innerHTML = `${dias}d ${horas}h ${minutos}m ${segundos}s`;
 }
 
 // Renderizar Missões
 function renderizarMissoes() {
     const container = document.getElementById('lista-missoes');
+    if (!container) return;
+    
     container.innerHTML = '';
     missoes.forEach(missao => {
         const card = document.createElement('div');
@@ -268,10 +305,10 @@ function completarMissao(id) {
     }
 }
 
-// RENDERIZAR LOJA (CUPONS)
+// Renderizar Loja de Cupons
 function renderizarLoja() {
     const container = document.getElementById('lista-loja');
-    if (!container) return; // Proteção caso a aba não esteja renderizada
+    if (!container) return;
     
     container.innerHTML = '';
     const itensLojaIniciais = [
@@ -284,12 +321,12 @@ function renderizarLoja() {
         const card = document.createElement('div');
         card.className = 'card-item shop-card';
         card.innerHTML = `
-            <div class="emoji-badge">${item.emoji}</div>
+            <div class="emoji-badge" style="font-size:2rem;">${item.emoji}</div>
             <div class="card-text">
                 <h4>${item.titulo}</h4>
                 <p>Custo: ${item.custo} moedas</p>
             </div>
-            <button class="action-btn" style="width: 100%; margin-top: 8px; background: var(--accent-purple); color: white;" onclick="comprarItem(${item.custo}, '${item.titulo}', '${item.emoji}')">
+            <button class="action-btn" style="width: 100%; margin-top: 8px; background: var(--accent-purple); color: white; padding:6px; cursor:pointer;" onclick="comprarItem(${item.custo}, '${item.titulo}', '${item.emoji}')">
                 Resgatar
             </button>
         `;
@@ -307,7 +344,7 @@ function comprarItem(custo, nome, emoji) {
     }
 }
 
-// Criador de Imagem do Cupom
+// Criador de Imagem do Cupom (Canvas)
 function gerarFotoCupom(tituloPrêmio, emojiPrêmio) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -363,10 +400,12 @@ function gerarFotoCupom(tituloPrêmio, emojiPrêmio) {
     ctx.fillText(`SERIAL: LOVE-${numeroAleatorio}`, 50, 340);
 
     const imagemURL = canvas.toDataURL('image/png');
-    document.getElementById('wrapper-imagem-cupom').innerHTML = `<img src="${imagemURL}" alt="Cupom">`;
+    document.getElementById('wrapper-imagem-cupom').innerHTML = `<img src="${imagemURL}" alt="Cupom" style="max-width:100%; height:auto;">`;
     const btnBaixar = document.getElementById('btn-baixar-cupom');
-    btnBaixar.href = imagemURL;
-    btnBaixar.download = `cupom-${tituloPrêmio.toLowerCase().replace(/\s+/g, '-')}.png`;
+    if (btnBaixar) {
+        btnBaixar.href = imagemURL;
+        btnBaixar.download = `cupom-${tituloPrêmio.toLowerCase().replace(/\s+/g, '-')}.png`;
+    }
 
     document.getElementById('modal-cupom').style.display = 'flex';
 }
@@ -381,16 +420,15 @@ function agendarEncontro() {
     const horaVal = document.getElementById('time-input').value;
     const lugarVal = document.getElementById('place-input').value;
     const notasVal = document.getElementById('notes-input').value;
+    const elPhone = document.getElementById('phone-input');
     
-    // Captura o número digitado manualmente no ecrã e limpa espaços/traços
-    let telefoneManual = document.getElementById('phone-input').value.replace(/\D/g, '');
+    let telefoneManual = elPhone ? elPhone.value.replace(/\D/g, '') : '';
 
     if (!dataVal || !horaVal || !lugarVal || !telefoneManual) {
         mostrarAviso("❌ Preencha data, hora, lugar e número de WhatsApp!");
         return;
     }
 
-    // Adiciona o prefixo do país (55) automaticamente se o utilizador colocar só o DDD + número
     if (telefoneManual.length <= 11) {
         telefoneManual = "55" + telefoneManual;
     }
@@ -413,19 +451,20 @@ function agendarEncontro() {
                               `📍 *Local:* ${lugarVal}%0A` +
                               `✨ *Notas:* ${notaFinal}%0A%0A Te amo! ❤️`;
         
-        // Abre o link do WhatsApp usando o número introduzido manualmente
         window.open(`https://api.whatsapp.com/send?phone=${telefoneManual}&text=${textoMensagem}`, '_blank');
+        
+        document.getElementById('date-input').value = '';
+        document.getElementById('time-input').value = '';
+        document.getElementById('place-input').value = '';
+        document.getElementById('notes-input').value = '';
+        elPhone.value = '';
     });
-
-    document.getElementById('date-input').value = '';
-    document.getElementById('time-input').value = '';
-    document.getElementById('place-input').value = '';
-    document.getElementById('notes-input').value = '';
-    document.getElementById('phone-input').value = '';
 }
 
 function renderizarEncontro() {
     const container = document.getElementById('convite-encontro-container');
+    if (!container) return;
+    
     if (!encontroMarcado) {
         container.innerHTML = `
             <p style="color: var(--text-muted); font-size: 0.9rem; font-style: italic; text-align: center; padding: 20px;">
@@ -436,15 +475,15 @@ function renderizarEncontro() {
     }
 
     container.innerHTML = `
-        <div class="date-invitation-card">
-            <h4 style="color: var(--accent-pink); font-size: 1.1rem; margin-bottom: 12px;">💖 Convite Confirmado</h4>
+        <div class="date-invitation-card" style="border: 1px solid #ccc; padding: 15px; border-radius: 8px; max-width: 400px; margin: 0 auto;">
+            <h4 style="color: var(--accent-pink); font-size: 1.1rem; margin-bottom: 12px; text-align:center;">💖 Convite Confirmado</h4>
             <p style="font-size: 0.95rem; margin-bottom: 6px;"><strong>📍 Local:</strong> ${encontroMarcado.lugar}</p>
             <p style="font-size: 0.95rem; margin-bottom: 6px;"><strong>📅 Data:</strong> ${encontroMarcado.data}</p>
             <p style="font-size: 0.95rem; margin-bottom: 12px;"><strong>⏰ Horário:</strong> ${encontroMarcado.hora}</p>
-            <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border-left: 3px solid var(--accent-purple);">
-                <p style="font-size: 0.85rem; color: var(--text-muted);"><strong>✨ Notas:</strong> ${encontroMarcado.notes}</p>
+            <div style="background: rgba(0,0,0,0.03); padding: 10px; border-radius: 8px; border-left: 3px solid var(--accent-purple);">
+                <p style="font-size: 0.85rem; color: #555;"><strong>✨ Notas:</strong> ${encontroMarcado.notes}</p>
             </div>
-            <button class="action-btn" style="background: rgba(255, 51, 102, 0.15); color: var(--accent-pink); font-size: 0.8rem; margin-top: 15px; width: 100%; border: 1px solid rgba(255, 51, 102, 0.2);" onclick="desmarcarEncontro()">
+            <button class="action-btn" style="background: rgba(255, 51, 102, 0.15); color: var(--accent-pink); font-size: 0.8rem; margin-top: 15px; width: 100%; border: 1px solid rgba(255, 51, 102, 0.2); padding: 8px; cursor:pointer;" onclick="desmarcarEncontro()">
                 ❌ Desmarcar ou Mudar Date
             </button>
         </div>
